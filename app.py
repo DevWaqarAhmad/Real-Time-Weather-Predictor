@@ -52,34 +52,49 @@ def fetch_weather_by_city(city):
     res = requests.get(url)
     return res.json()
 
-def fetch_7_day_forecast(lat, lon):
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=minutely,hourly,alerts,current&units={units_param}&appid={api_key}"
-    res = requests.get(url)
-    return res.json()
+# def fetch_7_day_forecast(lat, lon):
+#     url = f"https://api.openweathermap.org/data/2.5/onecall"
+#     params = {
+#         "lat": lat,
+#         "lon": lon,
+#         "exclude": "minutely,hourly,alerts,current",
+#         "units": units_param,
+#         "appid": api_key
+#     }
+#     res = requests.get(url, params=params)
+#     data = res.json()
 
-def display_forecast(data):
-    st.markdown("## 📅 7-Day Forecast")
-    daily = data.get("daily", [])[:7]
+#     # Optional: Check and handle if "daily" is missing
+#     if "daily" not in data:
+#         st.error("⚠️ 7-day forecast data not available. Please check your API plan or try again later.")
+#         return {"daily": []}  # Return empty structure to avoid crash
+#     return data
 
-    for i in range(0, len(daily), 3):
-        cols = st.columns(3)
-        for j in range(3):
-            if i + j < len(daily):
-                day = daily[i + j]
-                date = datetime.datetime.fromtimestamp(day["dt"]).strftime("%A, %d %b")
-                icon = day["weather"][0]["icon"]
-                description = day["weather"][0]["description"].title()
-                temp_day = day["temp"]["day"]
-                temp_night = day["temp"]["night"]
-                humidity = day["humidity"]
 
-                with cols[j]:
-                    st.markdown(f"### {date}")
-                    st.image(f"http://openweathermap.org/img/wn/{icon}@2x.png", width=70)
-                    st.markdown(f"**🌤 {description}**")
-                    st.markdown(f"🌡 Day: `{temp_day} {temp_symbol}`")
-                    st.markdown(f"🌙 Night: `{temp_night} {temp_symbol}`")
-                    st.markdown(f"💧 Humidity: `{humidity}%`")
+
+# def display_forecast(data):
+#     st.markdown("## 📅 7-Day Forecast")
+#     daily = data.get("daily", [])[:7]
+
+#     for i in range(0, len(daily), 3):
+#         cols = st.columns(3)
+#         for j in range(3):
+#             if i + j < len(daily):
+#                 day = daily[i + j]
+#                 date = datetime.datetime.fromtimestamp(day["dt"]).strftime("%A, %d %b")
+#                 icon = day["weather"][0]["icon"]
+#                 description = day["weather"][0]["description"].title()
+#                 temp_day = day["temp"]["day"]
+#                 temp_night = day["temp"]["night"]
+#                 humidity = day["humidity"]
+
+#                 with cols[j]:
+#                     st.markdown(f"### {date}")
+#                     st.image(f"http://openweathermap.org/img/wn/{icon}@2x.png", width=70)
+#                     st.markdown(f"**🌤 {description}**")
+#                     st.markdown(f"🌡 Day: `{temp_day} {temp_symbol}`")
+#                     st.markdown(f"🌙 Night: `{temp_night} {temp_symbol}`")
+#                     st.markdown(f"💧 Humidity: `{humidity}%`")
 
 def display_weather(data):
     if data.get("cod") != 200:
@@ -136,9 +151,9 @@ if location and location.get("coords"):
     lon = location["coords"]["longitude"]
     st.success(f"📍 Detected Location: {lat:.2f}, {lon:.2f}")
     weather_data = fetch_weather_by_coords(lat, lon)
-    forecast_data = fetch_7_day_forecast(lat, lon)
+    #forecast_data = fetch_7_day_forecast(lat, lon)
     display_weather(weather_data)
-    display_forecast(forecast_data)
+    #display_forecast(forecast_data)
 
 else:
     st.warning("📍 Could not detect your location automatically. Please enter your city name below.")
@@ -150,9 +165,9 @@ else:
             if weather_data.get("cod") == 200:
                 lat = weather_data["coord"]["lat"]
                 lon = weather_data["coord"]["lon"]
-                forecast_data = fetch_7_day_forecast(lat, lon)
+                #forecast_data = fetch_7_day_forecast(lat, lon)
                 display_weather(weather_data)
-                display_forecast(forecast_data)
+                #display_forecast(forecast_data)
             else:
                 st.error("⚠️ City not found. Please check spelling or try another city.")
         else:
