@@ -3,10 +3,10 @@ import requests
 import datetime
 from streamlit_js_eval import get_geolocation
 
-api_key = "6040c6c74f7d471d8ffb884ffa6d621b"  # ✅ New working key for OneCall 3.0
+api_key = "6040c6c74f7d471d8ffb884ffa6d621b"  
 
-st.set_page_config(page_title="📍 Real-Time Weather", layout="centered")
-st.title("📍 Real-Time Location-Based Weather Predictor")
+st.set_page_config(page_title="Real-Time Weather", layout="centered")
+st.title("Real-Time Location-Based Weather Predictor")
 
 unit = st.radio("Choose temperature unit:", ("Celsius (°C)", "Fahrenheit (°F)"))
 units_param = "metric" if unit.startswith("Celsius") else "imperial"
@@ -29,18 +29,83 @@ def get_local_datetime(offset_seconds):
     local_now = utc_now.astimezone(tz)
     return local_now.strftime('%A, %d %B %Y %H:%M')
 
-def set_background_color(weather_main):
-    weather_main = weather_main.lower()
-    if 'rain' in weather_main:
-        return '#A3BFD9'
-    elif 'cloud' in weather_main:
-        return '#C0C0C0'
-    elif 'clear' in weather_main:
-        return '#FFD966'
-    elif 'snow' in weather_main:
-        return '#FFFFFF'
-    else:
-        return '#F0F0F0'
+# def set_background_color(weather_main):
+#     weather_main = weather_main.lower()
+#     if 'rain' in weather_main:
+#         return '#A3BFD9'
+#     elif 'cloud' in weather_main:
+#         return '#C0C0C0'
+#     elif 'clear' in weather_main:
+#         return '#FFD966'
+#     elif 'snow' in weather_main:
+#         return '#FFFFFF'
+#     else:
+#         return '#F0F0F0'
+def get_weather_suggestion(temp, humidity, condition, wind_speed, visibility):
+    suggestion = ""
+
+    condition_lower = condition.lower()
+
+    # 🔥 Extreme heat and humidity
+    if temp >= 38 and humidity >= 60:
+        suggestion += "🥵 Extreme heat and humidity! Avoid sunlight. Stay indoors, wear loose cotton clothes, use fans/AC, and keep ORS or lemonade handy."
+
+    # 🌡️ Hot and sticky
+    elif 30 <= temp < 38 and humidity >= 70:
+        suggestion += "🌡️ It's hot and sticky — habas wala mosam. Cotton clothes, lots of water, and shade are a must."
+
+    # ☀️ Hot but manageable
+    elif 30 <= temp < 38 and humidity < 70:
+        suggestion += "☀️ It's warm but manageable. Stay hydrated, wear sunglasses, and avoid heavy meals."
+
+    # 😊 Pleasant weather
+    elif 20 <= temp < 30:
+        if humidity > 75:
+            suggestion += "🌤️ Comfortable temperature but sticky due to humidity. Light dressing recommended, and ventilation is important."
+        else:
+            suggestion += "🙂 Perfect weather! Great time for a walk or light outdoor activity. Light clothes will be just fine."
+
+    # 🧊 Chilly
+    elif 10 <= temp < 20:
+        suggestion += "🧥 A bit chilly. Wear a sweater or jacket, and consider warm drinks like chai or coffee."
+
+    # ❄️ Cold
+    elif temp < 10:
+        suggestion += "❄️ Very cold! Wear layers, use socks and gloves if going out, and try dry fruits or soup to stay warm."
+
+    # ☔ Rain conditions
+    if "rain" in condition_lower:
+        suggestion += " ☔ Rain expected — carry an umbrella, avoid slippery roads, and wear waterproof shoes."
+
+    # ❄️ Snow
+    if "snow" in condition_lower:
+        suggestion += " ❄️ Snowfall ahead — bundle up! Drive or walk carefully."
+
+    # 🌫️ Fog or mist
+    if "fog" in condition_lower or "mist" in condition_lower:
+        suggestion += " 🌫️ Foggy weather — drive slowly, use fog lights, and avoid early morning outings if possible."
+
+    # 🌪️ Dust storm / haze
+    if "dust" in condition_lower or "haze" in condition_lower or "sand" in condition_lower:
+        suggestion += " 🌪️ Dusty atmosphere — wear a mask outside, keep windows closed, and avoid exposure if you have breathing issues."
+
+    # 🌥️ Cloudy
+    if "cloud" in condition_lower and temp > 30:
+        suggestion += " ⛅ Cloudy sky but still warm — humidity may increase. Stay cool."
+
+    # 🌞 Clear & dry
+    if "clear" in condition_lower and humidity < 30:
+        suggestion += " 🔆 Clear and dry day — use moisturizer, drink water, and protect your skin from sunburn."
+
+    # 🌬️ Wind
+    if wind_speed >= 10:
+        suggestion += f" 💨 Strong winds blowing ({wind_speed} m/s). Secure loose objects and avoid unnecessary exposure."
+
+    # 👁️ Visibility
+    if visibility < 2:
+        suggestion += f" 👁️ Low visibility ({visibility} km) — be cautious while driving."
+
+    return suggestion.strip()
 
 def fetch_weather_by_coords(lat, lon):
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units={units_param}&appid={api_key}"
@@ -115,12 +180,31 @@ def display_weather(data):
     sunrise = convert_utc_to_local(data['sys']['sunrise'], timezone_sec)
     sunset = convert_utc_to_local(data['sys']['sunset'], timezone_sec)
     local_time = get_local_datetime(timezone_sec)
+    is_day = data['sys']['sunrise'] < data['dt'] < data['sys']['sunset']
 
-    bg_color = set_background_color(data['weather'][0]['main'])
-    st.markdown(
-        f"<div style='background-color:{bg_color}; padding:20px; border-radius:15px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);'>",
-        unsafe_allow_html=True
-    )
+# Set theme based on time
+    if is_day:
+     bg_color = "#FFF9C4"  # light yellow (day)
+     greeting = "🌞 Good Day!"
+    else:
+     bg_color = "#2C3E50"  # dark blue (night)
+     reeting = "🌙 Good Evening!"
+
+    
+
+    # ✅ Convert temp for suggestion logic
+    temp_celsius = temp if units_param == "metric" else (temp - 32) * 5 / 9
+    suggestion = get_weather_suggestion(temp_celsius, humidity, condition, wind_speed, visibility)
+    
+
+
+    #bg_color = set_background_color(data['weather'][0]['main'])
+    # st.markdown(
+    #     f"<div style='background-color:{bg_color}; padding:20px; border-radius:15px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);'>",
+    #     unsafe_allow_html=True
+    # )
+    st.markdown("### 🧾 Weather Suggestion")
+    st.info(suggestion)
 
     icon_code = data['weather'][0]['icon']
     icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
@@ -142,6 +226,7 @@ def display_weather(data):
         st.write(f"🌅 Sunrise: {sunrise}")
         st.write(f"🌇 Sunset: {sunset}")
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # 🌍 Main Logic
 location = get_geolocation()
