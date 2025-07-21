@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import datetime
 from streamlit_js_eval import get_geolocation
+from streamlit_extras.metric_cards import style_metric_cards
+
 
 api_key = "6040c6c74f7d471d8ffb884ffa6d621b"  
 st.set_page_config(page_title="Real Time Weather", layout="centered")
@@ -116,6 +118,7 @@ def fetch_weather_by_city(city):
     res = requests.get(url)
     return res.json()
 
+
 # def fetch_7_day_forecast(lat, lon):
 #     url = f"https://api.openweathermap.org/data/2.5/onecall"
 #     params = {
@@ -181,68 +184,44 @@ def display_weather(data):
     local_time = get_local_datetime(timezone_sec)
     current_local_ts = datetime.datetime.utcfromtimestamp(data['dt'] + timezone_sec).timestamp()
 
-    # Time range setup
+    # Time-based icon selection
     sunrise_ts = data['sys']['sunrise'] + timezone_sec
     sunset_ts = data['sys']['sunset'] + timezone_sec
-    sunrise_start = sunrise_ts - 1800  # 30 mins before sunrise
-    sunrise_end = sunrise_ts + 1800    # 30 mins after sunrise
-    sunset_start = sunset_ts - 1800    # 30 mins before sunset
-    sunset_end = sunset_ts + 1800      # 30 mins after sunset
+    sunrise_start = sunrise_ts - 1800
+    sunrise_end = sunrise_ts + 1800
+    sunset_start = sunset_ts - 1800
+    sunset_end = sunset_ts + 1800
 
-    # Determine icon based on time
     if sunrise_start <= current_local_ts <= sunrise_end:
-        time_icon = "🌅"  # Sunrise
+        time_icon = "🌅"
     elif sunset_start <= current_local_ts <= sunset_end:
-        time_icon = "🌇"  # Sunset
+        time_icon = "🌇"
     elif sunrise_ts < current_local_ts < sunset_ts:
-        time_icon = "☀️"  # Day
+        time_icon = "☀️"
     else:
-        time_icon = "🌙"  # Night
+        time_icon = "🌙"
 
-    # Show icon above the main title
     st.markdown(f"<h1 style='text-align: center; font-size: 60px;'>{time_icon}</h1>", unsafe_allow_html=True)
-    
-    #st.markdown("<h1 style='text-align: center;'>Real-Time Location-Based Weather Predictor</h1>", unsafe_allow_html=True)
 
-    # sunrise_timestamp = data['sys']['sunrise'] + timezone_sec
-    # sunset_timestamp = data['sys']['sunset'] + timezone_sec
-    # is_day = sunrise_timestamp <= current_local_timestamp <= sunset_timestamp
+    # Fetch Air Quality
+    try:
+        lat = data['coord']['lat']
+        lon = data['coord']['lon']
+        air_quality_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={api_key}"
+        air_quality_response = requests.get(air_quality_url)
+        air_quality_data = air_quality_response.json()
 
+        pm2_5 = air_quality_data['list'][0]['components']['pm2_5']
+        pm10 = air_quality_data['list'][0]['components']['pm10']
+        aqi = air_quality_data['list'][0]['main']['aqi']
+    except:
+        pm2_5 = pm10 = aqi = None
 
-    # 🎨 Background & Greeting
-    # if is_day:
-    #     bg_color = "#FFF9C4"  # light yellow
-    #     greeting = "🌞 Good Day!"
-    #     text_color = "#000000"
-    # else:
-    #     bg_color = "#2C3E50"  # dark blue
-    #     greeting = "🌙 Good Evening!"
-    #     text_color = "#FFFFFF"
-
-    # 💡 Inject custom CSS for background
-    # st.markdown(
-    #     f"""
-    #     <style>
-    #         .stApp {{
-    #             background-color: {bg_color};
-    #             color: {text_color};
-    #         }}
-    #     </style>
-    #     """,
-    #     unsafe_allow_html=True
-    # )
-
+    # Units and suggestion
     temp_celsius = temp if units_param == "metric" else (temp - 32) * 5 / 9
     suggestion = get_weather_suggestion(temp_celsius, humidity, condition, wind_speed, visibility)
 
-    icon_code = data['weather'][0]['icon']
-    #icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
-
-    # 🌟 UI Section
-    #st.markdown("### 🧾 Weather Suggestion")
     st.info(suggestion)
-    #st.markdown(f"## {greeting}")
-    #st.image(icon_url, width=150)
     st.markdown(f"### 🌆 {city_name}")
     st.markdown(f"**🕒 Local time:** {local_time}")
 
@@ -251,40 +230,30 @@ def display_weather(data):
         st.metric(label=f"🌡 Temperature ({temp_symbol})", value=f"{temp} {temp_symbol}")
         st.metric(label=f"🤗 Feels Like ({temp_symbol})", value=f"{feels_like} {temp_symbol}")
         st.write(f"🌥 Condition: {condition}")
-    with col2:
         st.write(f"💧 Humidity: {humidity}%")
         st.write(f"👁️ Visibility: {visibility} km")
+    with col2:
         st.write(f"📈 Pressure: {pressure} hPa")
         st.write(f"🌬 Wind: {wind_speed} m/s, {wind_dir}")
         st.write(f"🌅 Sunrise: {sunrise}")
         st.write(f"🌇 Sunset: {sunset}")
+        if pm2_5 is not None and pm10 is not None:
+            st.write(f"🧪 PM2.5: {pm2_5} µg/m³")
+            st.write(f"🧪 PM10: {pm10} µg/m³")
+        else:
+            st.write("⚠️ Air quality data not available.")
+        if aqi is not None:
+            aqi_levels = {
+                1: "🟢 Good",
+                2: "🟡 Fair",
+                3: "🟠 Moderate",
+                4: "🔴 Poor",
+                5: "⚫ Very Poor"
+            }
+            st.write(f"🌫️ AQI: {aqi} {aqi_levels.get(aqi, '')}")
 
 
 
-
-    # icon_code = data['weather'][0]['icon']
-    # icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
-    # st.image(icon_url, width=150)
-
-    # st.markdown(f"### 🌆 {city_name}")
-    # st.markdown(f"**🕒 Local time:** {local_time}")
-
-    # col1, col2 = st.columns(2)
-    # with col1:
-    #     st.metric(label=f"🌡 Temperature ({temp_symbol})", value=f"{temp} {temp_symbol}")
-    #     st.metric(label=f"🤗 Feels Like ({temp_symbol})", value=f"{feels_like} {temp_symbol}")
-    #     st.write(f"🌥 Condition: {condition}")
-    # with col2:
-    #     st.write(f"💧 Humidity: {humidity}%")
-    #     st.write(f"👁️ Visibility: {visibility} km")
-    #     st.write(f"📈 Pressure: {pressure} hPa")
-    #     st.write(f"🌬 Wind: {wind_speed} m/s, {wind_dir}")
-    #     st.write(f"🌅 Sunrise: {sunrise}")
-    #     st.write(f"🌇 Sunset: {sunset}")
-    # st.markdown("</div>", unsafe_allow_html=True)
-
-
-# 🌍 Main Logic
 location = get_geolocation()
 
 if location and location.get("coords"):
@@ -292,9 +261,7 @@ if location and location.get("coords"):
     lon = location["coords"]["longitude"]
     st.success(f"📍 Detected Location: {lat:.2f}, {lon:.2f}")
     weather_data = fetch_weather_by_coords(lat, lon)
-    #forecast_data = fetch_7_day_forecast(lat, lon)
     display_weather(weather_data)
-    #display_forecast(forecast_data)
 
 else:
     st.warning("📍 Could not detect your location automatically. Please enter your city name below.")
@@ -304,11 +271,7 @@ else:
         if city.strip():
             weather_data = fetch_weather_by_city(city.strip())
             if weather_data.get("cod") == 200:
-                lat = weather_data["coord"]["lat"]
-                lon = weather_data["coord"]["lon"]
-                #forecast_data = fetch_7_day_forecast(lat, lon)
                 display_weather(weather_data)
-                #display_forecast(forecast_data)
             else:
                 st.error("⚠️ City not found. Please check spelling or try another city.")
         else:
