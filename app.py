@@ -47,62 +47,48 @@ def get_weather_suggestion(temp, humidity, condition, wind_speed, visibility):
 
     condition_lower = condition.lower()
 
-    # 🔥 Extreme heat and humidity
     if temp >= 38 and humidity >= 60:
         suggestion += "🥵 Extreme heat and humidity! Avoid sunlight. Stay indoors, wear loose cotton clothes, use fans/AC, and keep ORS or lemonade handy."
 
-    # 🌡️ Hot and sticky
     elif 30 <= temp < 38 and humidity >= 70:
         suggestion += "🌡️ It's hot and sticky — habas wala mosam. Cotton clothes, lots of water, and shade are a must."
 
-    # ☀️ Hot but manageable
     elif 30 <= temp < 38 and humidity < 70:
         suggestion += "☀️ It's warm but manageable. Stay hydrated, wear sunglasses, and avoid heavy meals."
 
-    # 😊 Pleasant weather
     elif 20 <= temp < 30:
         if humidity > 75:
             suggestion += "🌤️ Comfortable temperature but sticky due to humidity. Light dressing recommended, and ventilation is important."
         else:
             suggestion += "🙂 Perfect weather! Great time for a walk or light outdoor activity. Light clothes will be just fine."
 
-    # 🧊 Chilly
     elif 10 <= temp < 20:
         suggestion += "🧥 A bit chilly. Wear a sweater or jacket, and consider warm drinks like chai or coffee."
 
-    # ❄️ Cold
     elif temp < 10:
         suggestion += "❄️ Very cold! Wear layers, use socks and gloves if going out, and try dry fruits or soup to stay warm."
 
-    # ☔ Rain conditions
     if "rain" in condition_lower:
         suggestion += " ☔ Rain expected — carry an umbrella, avoid slippery roads, and wear waterproof shoes."
 
-    # ❄️ Snow
     if "snow" in condition_lower:
         suggestion += " ❄️ Snowfall ahead — bundle up! Drive or walk carefully."
 
-    # 🌫️ Fog or mist
     if "fog" in condition_lower or "mist" in condition_lower:
         suggestion += " 🌫️ Foggy weather — drive slowly, use fog lights, and avoid early morning outings if possible."
 
-    # 🌪️ Dust storm / haze
     if "dust" in condition_lower or "haze" in condition_lower or "sand" in condition_lower:
         suggestion += " 🌪️ Dusty atmosphere — wear a mask outside, keep windows closed, and avoid exposure if you have breathing issues."
 
-    # 🌥️ Cloudy
     if "cloud" in condition_lower and temp > 30:
         suggestion += " ⛅ Cloudy sky but still warm — humidity may increase. Stay cool."
 
-    # 🌞 Clear & dry
     if "clear" in condition_lower and humidity < 30:
         suggestion += " 🔆 Clear and dry day — use moisturizer, drink water, and protect your skin from sunburn."
 
-    # 🌬️ Wind
     if wind_speed >= 10:
         suggestion += f" 💨 Strong winds blowing ({wind_speed} m/s). Secure loose objects and avoid unnecessary exposure."
 
-    # 👁️ Visibility
     if visibility < 2:
         suggestion += f" 👁️ Low visibility ({visibility} km) — be cautious while driving."
 
@@ -184,7 +170,6 @@ def display_weather(data):
     local_time = get_local_datetime(timezone_sec)
     current_local_ts = datetime.datetime.utcfromtimestamp(data['dt'] + timezone_sec).timestamp()
 
-    # Time-based icon selection
     sunrise_ts = data['sys']['sunrise'] + timezone_sec
     sunset_ts = data['sys']['sunset'] + timezone_sec
     sunrise_start = sunrise_ts - 1800
@@ -203,7 +188,6 @@ def display_weather(data):
 
     st.markdown(f"<h1 style='text-align: center; font-size: 60px;'>{time_icon}</h1>", unsafe_allow_html=True)
 
-    # Fetch Air Quality
     try:
         lat = data['coord']['lat']
         lon = data['coord']['lon']
@@ -217,7 +201,6 @@ def display_weather(data):
     except:
         pm2_5 = pm10 = aqi = None
 
-    # Units and suggestion
     temp_celsius = temp if units_param == "metric" else (temp - 32) * 5 / 9
     suggestion = get_weather_suggestion(temp_celsius, humidity, condition, wind_speed, visibility)
 
