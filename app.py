@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import datetime
 from streamlit_js_eval import get_geolocation
-from streamlit_extras.metric_cards import style_metric_cards
+#from streamlit_extras.metric_cards import style_metric_cards
 
 
 api_key = "6040c6c74f7d471d8ffb884ffa6d621b"  
