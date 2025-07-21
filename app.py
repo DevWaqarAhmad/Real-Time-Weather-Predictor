@@ -4,9 +4,8 @@ import datetime
 from streamlit_js_eval import get_geolocation
 
 api_key = "6040c6c74f7d471d8ffb884ffa6d621b"  
-
-st.set_page_config(page_title="Real-Time Weather", layout="centered")
-st.title("Real-Time Location-Based Weather Predictor")
+st.set_page_config(page_title="Real Time Weather", layout="centered")
+st.markdown("<h1 style='text-align: center;'>Real-Time Location-Based Weather Predictor</h1>", unsafe_allow_html=True)
 
 unit = st.radio("Choose temperature unit:", ("Celsius (°C)", "Fahrenheit (°F)"))
 units_param = "metric" if unit.startswith("Celsius") else "imperial"
@@ -180,36 +179,70 @@ def display_weather(data):
     sunrise = convert_utc_to_local(data['sys']['sunrise'], timezone_sec)
     sunset = convert_utc_to_local(data['sys']['sunset'], timezone_sec)
     local_time = get_local_datetime(timezone_sec)
-    is_day = data['sys']['sunrise'] < data['dt'] < data['sys']['sunset']
+    current_local_ts = datetime.datetime.utcfromtimestamp(data['dt'] + timezone_sec).timestamp()
 
-# Set theme based on time
-    if is_day:
-     bg_color = "#FFF9C4"  # light yellow (day)
-     greeting = "🌞 Good Day!"
+    # Time range setup
+    sunrise_ts = data['sys']['sunrise'] + timezone_sec
+    sunset_ts = data['sys']['sunset'] + timezone_sec
+    sunrise_start = sunrise_ts - 1800  # 30 mins before sunrise
+    sunrise_end = sunrise_ts + 1800    # 30 mins after sunrise
+    sunset_start = sunset_ts - 1800    # 30 mins before sunset
+    sunset_end = sunset_ts + 1800      # 30 mins after sunset
+
+    # Determine icon based on time
+    if sunrise_start <= current_local_ts <= sunrise_end:
+        time_icon = "🌅"  # Sunrise
+    elif sunset_start <= current_local_ts <= sunset_end:
+        time_icon = "🌇"  # Sunset
+    elif sunrise_ts < current_local_ts < sunset_ts:
+        time_icon = "☀️"  # Day
     else:
-     bg_color = "#2C3E50"  # dark blue (night)
-     reeting = "🌙 Good Evening!"
+        time_icon = "🌙"  # Night
 
+    # Show icon above the main title
+    st.markdown(f"<h1 style='text-align: center; font-size: 60px;'>{time_icon}</h1>", unsafe_allow_html=True)
     
+    #st.markdown("<h1 style='text-align: center;'>Real-Time Location-Based Weather Predictor</h1>", unsafe_allow_html=True)
 
-    # ✅ Convert temp for suggestion logic
-    temp_celsius = temp if units_param == "metric" else (temp - 32) * 5 / 9
-    suggestion = get_weather_suggestion(temp_celsius, humidity, condition, wind_speed, visibility)
-    
+    # sunrise_timestamp = data['sys']['sunrise'] + timezone_sec
+    # sunset_timestamp = data['sys']['sunset'] + timezone_sec
+    # is_day = sunrise_timestamp <= current_local_timestamp <= sunset_timestamp
 
 
-    #bg_color = set_background_color(data['weather'][0]['main'])
+    # 🎨 Background & Greeting
+    # if is_day:
+    #     bg_color = "#FFF9C4"  # light yellow
+    #     greeting = "🌞 Good Day!"
+    #     text_color = "#000000"
+    # else:
+    #     bg_color = "#2C3E50"  # dark blue
+    #     greeting = "🌙 Good Evening!"
+    #     text_color = "#FFFFFF"
+
+    # 💡 Inject custom CSS for background
     # st.markdown(
-    #     f"<div style='background-color:{bg_color}; padding:20px; border-radius:15px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);'>",
+    #     f"""
+    #     <style>
+    #         .stApp {{
+    #             background-color: {bg_color};
+    #             color: {text_color};
+    #         }}
+    #     </style>
+    #     """,
     #     unsafe_allow_html=True
     # )
-    st.markdown("### 🧾 Weather Suggestion")
-    st.info(suggestion)
+
+    temp_celsius = temp if units_param == "metric" else (temp - 32) * 5 / 9
+    suggestion = get_weather_suggestion(temp_celsius, humidity, condition, wind_speed, visibility)
 
     icon_code = data['weather'][0]['icon']
-    icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
-    st.image(icon_url, width=150)
+    #icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
 
+    # 🌟 UI Section
+    #st.markdown("### 🧾 Weather Suggestion")
+    st.info(suggestion)
+    #st.markdown(f"## {greeting}")
+    #st.image(icon_url, width=150)
     st.markdown(f"### 🌆 {city_name}")
     st.markdown(f"**🕒 Local time:** {local_time}")
 
@@ -225,7 +258,30 @@ def display_weather(data):
         st.write(f"🌬 Wind: {wind_speed} m/s, {wind_dir}")
         st.write(f"🌅 Sunrise: {sunrise}")
         st.write(f"🌇 Sunset: {sunset}")
-    st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+
+    # icon_code = data['weather'][0]['icon']
+    # icon_url = f"http://openweathermap.org/img/wn/{icon_code}@4x.png"
+    # st.image(icon_url, width=150)
+
+    # st.markdown(f"### 🌆 {city_name}")
+    # st.markdown(f"**🕒 Local time:** {local_time}")
+
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     st.metric(label=f"🌡 Temperature ({temp_symbol})", value=f"{temp} {temp_symbol}")
+    #     st.metric(label=f"🤗 Feels Like ({temp_symbol})", value=f"{feels_like} {temp_symbol}")
+    #     st.write(f"🌥 Condition: {condition}")
+    # with col2:
+    #     st.write(f"💧 Humidity: {humidity}%")
+    #     st.write(f"👁️ Visibility: {visibility} km")
+    #     st.write(f"📈 Pressure: {pressure} hPa")
+    #     st.write(f"🌬 Wind: {wind_speed} m/s, {wind_dir}")
+    #     st.write(f"🌅 Sunrise: {sunrise}")
+    #     st.write(f"🌇 Sunset: {sunset}")
+    # st.markdown("</div>", unsafe_allow_html=True)
 
 
 # 🌍 Main Logic
